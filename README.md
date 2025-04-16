@@ -27,7 +27,7 @@ expense-tracker/
 ├── backend/     # Next.js backend (API routes, Supabase integration)
 ├── docker-compose.yml
 ├── README.md
-└── supabase_schema.sql
+└── supabase/
 ```
 
 ---
@@ -49,98 +49,12 @@ expense-tracker/
 
 ### 2. Database Tables & SQL Setup
 
-All schema, relationships, RLS (Row Level Security), and triggers for Supabase are provided in the [`supabase_schema.sql`](./supabase_schema.sql) file in the root of this repository.
+All database schema, relationships, and RLS (Row Level Security) are managed as code using Supabase migrations in the [`supabase/`](./supabase/) directory.
 
 > **To set up your Supabase database:**
-> 1. Open your Supabase project.
-> 2. Go to the SQL editor.
-> 3. Copy and run the contents of [`supabase_schema.sql`](./supabase_schema.sql).
-
-This will create all necessary tables, policies, and triggers for your expense tracker backend.
+> Follow the instructions in [`supabase/README.md`](./supabase/README.md) to initialize and migrate your database, both locally and on your remote Supabase project.
 
 ---
-
-### (Optional) Populate Default Categories & Payment Methods
-
-To automatically add some starter categories and payment methods for each new user, you can set up a trigger in Supabase. Below is an example trigger function you can adapt:
-
-```sql
-CREATE OR REPLACE FUNCTION public.insert_default_expense_data()
-RETURNS TRIGGER AS $$
-BEGIN
-  -- Insert default categories for the new user
-  INSERT INTO categories (user_id, name) VALUES
-    (NEW.id, 'Food'), (NEW.id, 'Fitness'), (NEW.id, 'Shop'),
-    (NEW.id, 'Grocery'), (NEW.id, 'Travel'), (NEW.id, 'Fun'),
-    (NEW.id, 'Drinks'), (NEW.id, 'Invest'), (NEW.id, 'Health'),
-    (NEW.id, 'Bills');
-
-  -- Insert default payment methods for the new user
-  INSERT INTO payment_methods (user_id, name) VALUES
-    (NEW.id, 'UPI'), (NEW.id, 'Card'), (NEW.id, 'Cash'),
-    (NEW.id, 'Wallet'), (NEW.id, 'Bank'), (NEW.id, 'Other');
-
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
--- Attach this trigger to the auth.users table if you want it to run on user signup:
--- (Supabase recommends using 'AFTER INSERT' on auth.users for onboarding hooks)
---
--- CREATE TRIGGER on_user_signup_defaults
--- AFTER INSERT ON auth.users
--- FOR EACH ROW EXECUTE FUNCTION public.insert_default_expense_data();
-```
-
-> This is optional, but highly recommended for a better onboarding experience.
-> You may need to adjust permissions or run this as an admin/service role.
-
-```sql
-description TEXT,
-amount DECIMAL(10, 2) NOT NULL CHECK (amount >= 0),
-payment_method_id UUID REFERENCES payment_methods(id) ON DELETE RESTRICT NOT NULL,
-notes TEXT,
-type expense_type NOT NULL,
-created_at TIMESTAMPTZ DEFAULT timezone('utc', now()) NOT NULL,
-updated_at TIMESTAMPTZ DEFAULT timezone('utc', now()) NOT NULL
-);
-
-ALTER TABLE expenses ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Allow users to manage their own expenses" ON expenses
-    FOR ALL
-    USING (auth.uid() = user_id);
-CREATE INDEX idx_expenses_user_id ON expenses(user_id);
-CREATE INDEX idx_expenses_timestamp ON expenses(timestamp);
-CREATE INDEX idx_expenses_category_id ON expenses(category_id);
-CREATE INDEX idx_expenses_payment_method_id ON expenses(payment_method_id);
-CREATE INDEX idx_expenses_type ON expenses(type);
-
--- Trigger function to auto-update 'updated_at'
-CREATE OR REPLACE FUNCTION trigger_set_timestamp()
-RETURNS TRIGGER AS $$
-BEGIN
-  NEW.updated_at = timezone('utc', now());
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER set_timestamp_categories
-BEFORE UPDATE ON categories
-FOR EACH ROW
-EXECUTE FUNCTION trigger_set_timestamp();
-
-CREATE TRIGGER set_timestamp_payment_methods
-BEFORE UPDATE ON payment_methods
-FOR EACH ROW
-EXECUTE FUNCTION trigger_set_timestamp();
-
-CREATE TRIGGER set_timestamp_expenses
-BEFORE UPDATE ON expenses
-FOR EACH ROW
-EXECUTE FUNCTION trigger_set_timestamp();
-```
-
-> **Note:** All tables reference `auth.users.id` for user-level data isolation.
 
 ### 3. Auth Settings
 - Enable **Email/Password** authentication in Supabase Auth settings.
@@ -175,8 +89,8 @@ NEXT_PUBLIC_API_URL=http://localhost:3000
 ```bash
 docker-compose up --build
 ```
-- Frontend: [http://localhost:3001](http://localhost:3001)
-- Backend: [http://localhost:3000](http://localhost:3000)
+- Frontend: http://localhost:3001
+- Backend: http://localhost:3000
 
 ### 3. Stopping
 ```bash
