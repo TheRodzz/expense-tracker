@@ -1,0 +1,12 @@
+node_modules
+.next
+*.log
+dist
+coverage
+npm-debug.log
+.DS_Store
+.git
+.gitignore
+README.md
+*.csv
+test.py
