@@ -45,51 +45,93 @@ All API routes are relative to the application's base URL.
 
 These endpoints handle user authentication. They do **not** require the `Authorization` header.
 
-### 1. Sign Up
+### 1. Login
 
-*   **Endpoint:** `POST /api/auth/signup`
-*   **Description:** Creates a new user account.
+*   **Endpoint:** `POST /api/auth/login`
+*   **Description:** Authenticates a user and sets an HTTP-only JWT cookie and CSRF token.
 *   **Request Body:**
     ```json
     {
       "email": "user@example.com",
-      "password": "your_secure_password"
+      "password": "password123"
     }
     ```
 *   **Responses:**
-    *   `201 Created`: Signup successful. If signup does not require email confirmation, the response body includes a message and user information, and an HTTP-only `auth_token` cookie is set for authentication. If email confirmation is required, the response prompts the user to check their email, and no cookie is set until confirmation.
+    *   `200 OK`: Login successful, sets cookies. Returns CSRF token.
+    ```json
+    { "success": true, "csrfToken": "..." }
+    ```
+    *   `400 Bad Request`: Email or password missing.
+    *   `401 Unauthorized`: Invalid credentials.
+    *   `500 Internal Server Error`: Other error.
+*   **Security:** JWT is stored in an HTTP-only, Secure cookie. CSRF token is required for state-changing requests.
+
+### 2. Signup
+
+*   **Endpoint:** `POST /api/auth/signup`
+*   **Description:** Registers a new user and sets authentication cookies if signup does not require email confirmation.
+*   **Request Body:**
+    ```json
+    {
+      "email": "user@example.com",
+      "password": "password123"
+    }
+    ```
+*   **Responses:**
+    *   `201 Created`: Signup successful, returns user info and CSRF token if session is created.
+    ```json
+    {
+      "message": "Signup successful.",
+      "user": { /* Supabase user object */ },
+      "csrfToken": "..."
+    }
+    ```
+    *   `201 Created`: If email confirmation is required, returns user info and message.
     ```json
     {
       "message": "Signup successful. Check your email for confirmation (if enabled).",
       "user": { /* Supabase user object */ }
     }
     ```
-    *   `400 Bad Request`: Missing email/password or signup failed (e.g., user already exists). Response body includes an error message.
-    *   `500 Internal Server Error`: Unexpected server error.
+    *   `400 Bad Request`: Email or password missing, or signup error.
+    *   `500 Internal Server Error`: Other error.
+*   **Security:** Same as login.
 
-### 2. Log In
-
-*   **Endpoint:** `POST /api/auth/login`
-*   **Description:** Authenticates a user. On success, sets an HTTP-only `auth_token` cookie containing a JWT for authentication.
-*   **Request Body:**
-    ```json
-    {
-      "email": "user@example.com",
-      "password": "your_password"
-    }
-    ```
-*   **Responses:**
-    *   `200 OK`: Login successful. Response body: `{ "success": true }`. The JWT is set as an HTTP-only cookie (`auth_token`).
-    *   `400 Bad Request`: Missing email/password.
-    *   `401 Unauthorized`: Invalid credentials or login failed. Response body includes an error message.
-    *   `500 Internal Server Error`: Unexpected server error.
-
-### 3. Log Out
+### 3. Logout
 
 *   **Endpoint:** `POST /api/auth/logout`
-*   **Description:** Logs out the user by clearing the `auth_token` cookie.
+*   **Description:** Logs out the user by clearing the authentication and CSRF cookies.
 *   **Responses:**
-    *   `200 OK`: Logout successful. The authentication cookie is cleared.
+    *   `200 OK`: Logout successful, cookies cleared.
+
+---
+
+## Analytics Endpoints
+
+### 1. Get Average Spend Per Category
+
+*   **Endpoint:** `GET /api/analytics/average-spend`
+*   **Description:** Returns the average, total, and count of expenses per category for the authenticated user within a date range.
+*   **Query Parameters:**
+    *   `startDate` (ISO 8601 string, required): Start date for the period.
+    *   `endDate` (ISO 8601 string, required): End date for the period.
+*   **Responses:**
+    *   `200 OK`: Returns an array of objects, each representing a category summary.
+    ```json
+    [
+      {
+        "categoryId": "uuid",
+        "categoryName": "Food",
+        "totalAmount": 120.50,
+        "expenseCount": 4,
+        "averageAmount": 30.13,
+        "is_expense": true
+      }
+    ]
+    ```
+    *   `400 Bad Request`: Invalid or missing query parameters.
+    *   `401 Unauthorized`: Authentication failed.
+    *   `500 Internal Server Error`: Database or server error.
 
 ---
 
@@ -129,7 +171,8 @@ Endpoints for managing expense categories. Require authentication.
 *   **Request Body:** (Uses `CategoryCreateSchema`)
     ```json
     {
-      "name": "New Category Name"
+      "name": "New Category Name",
+      "is_expense": true
     }
     ```
 *   **Responses:**
@@ -154,10 +197,11 @@ Endpoints for managing expense categories. Require authentication.
 *   **Description:** Updates the name of a specific category belonging to the authenticated user.
 *   **Path Parameter:**
     *   `id` (UUID): The ID of the category to update.
-*   **Request Body:** (Uses partial `CategoryCreateSchema`, only `name` is updatable)
+*   **Request Body:** (Uses partial `CategoryCreateSchema`, only `name` and `is_expense` are updatable)
     ```json
     {
-      "name": "Updated Category Name"
+      "name": "Updated Category Name",
+      "is_expense": false
     }
     ```
 *   **Responses:**
@@ -228,7 +272,8 @@ Endpoints for managing payment methods. Require authentication.
 *   **Request Body:** (Uses `PaymentMethodCreateSchema`)
     ```json
     {
-      "name": "New Payment Method Name"
+      "name": "New Payment Method Name",
+      "is_expense": true
     }
     ```
 *   **Responses:**
@@ -253,10 +298,11 @@ Endpoints for managing payment methods. Require authentication.
 *   **Description:** Updates the name of a specific payment method belonging to the authenticated user.
 *   **Path Parameter:**
     *   `id` (UUID): The ID of the payment method to update.
-*   **Request Body:** (Uses partial `PaymentMethodCreateSchema`, only `name` is updatable)
+*   **Request Body:** (Uses partial `PaymentMethodCreateSchema`, only `name` and `is_expense` are updatable)
     ```json
     {
-      "name": "Updated Payment Method Name"
+      "name": "Updated Payment Method Name",
+      "is_expense": false
     }
     ```
 *   **Responses:**
@@ -427,48 +473,26 @@ Endpoints for managing expenses. Require authentication.
     *   `404 Not Found`: Expense with the specified ID not found or doesn't belong to the user.
     *   `500 Internal Server Error`: Database or other server error.
 
-### 6. Get Expenses by Category
+### 6. Filtering Expenses by Category or Payment Method
 
-*   **Endpoint:** `GET /api/expenses/category/{categoryId}`
-*   **Description:** Retrieves expenses for a specific category within a date range, belonging to the authenticated user.
-*   **Path Parameter:**
-    *   `categoryId` (UUID): The ID of the category to filter expenses by.
-*   **Query Parameters:** (Uses `GetExpensesByRelationQuerySchema`)
-    *   `startDate` (ISO 8601 string): Start date for the period (required).
-    *   `endDate` (ISO 8601 string): End date for the period (required).
+*   **Endpoint:** `GET /api/expenses`
+*   **Description:** Retrieves expenses filtered by category or payment method (and/or date range, type, etc.) for the authenticated user.
+*   **Query Parameters:**
+    *   `categoryId` (UUID): Filter by category ID (optional)
+    *   `paymentMethodId` (UUID): Filter by payment method ID (optional)
+    *   `startDate` (ISO 8601 string): Start date for the period (optional)
+    *   `endDate` (ISO 8601 string): End date for the period (optional)
+    *   `type` (string): Filter by type ("expense" or "income") (optional)
     *   `skip` (number, optional, default: 0): Number of records to skip for pagination.
-    *   `limit` (number, optional, default: 100): Maximum number of records to return (max 500).
+    *   `limit` (number, optional, default: 10): Maximum number of records to return.
 *   **Sorting:** Default sort is by `timestamp` descending.
 *   **Responses:**
     *   `200 OK`: Returns an array of expense objects matching the criteria.
     ```json
     [ { /* Expense object */ }, ... ]
     ```
-    *   `400 Bad Request`: Invalid `categoryId` format or invalid/missing query parameters (`startDate`, `endDate`).
+    *   `400 Bad Request`: Invalid query parameters.
     *   `401 Unauthorized`: Authentication failed.
-    *   `404 Not Found`: Potentially if the specified category doesn't exist or belong to the user (depending on implementation checks).
-    *   `500 Internal Server Error`: Database or other server error.
-
-### 7. Get Expenses by Payment Method
-
-*   **Endpoint:** `GET /api/expenses/payment-method/{paymentMethodId}`
-*   **Description:** Retrieves expenses for a specific payment method within a date range, belonging to the authenticated user.
-*   **Path Parameter:**
-    *   `paymentMethodId` (UUID): The ID of the payment method to filter expenses by.
-*   **Query Parameters:** (Uses `GetExpensesByRelationQuerySchema`)
-    *   `startDate` (ISO 8601 string): Start date for the period (required).
-    *   `endDate` (ISO 8601 string): End date for the period (required).
-    *   `skip` (number, optional, default: 0): Number of records to skip for pagination.
-    *   `limit` (number, optional, default: 100): Maximum number of records to return (max 500).
-*   **Sorting:** Default sort is by `timestamp` descending.
-*   **Responses:**
-    *   `200 OK`: Returns an array of expense objects matching the criteria.
-    ```json
-    [ { /* Expense object */ }, ... ]
-    ```
-    *   `400 Bad Request`: Invalid `paymentMethodId` format or invalid/missing query parameters (`startDate`, `endDate`).
-    *   `401 Unauthorized`: Authentication failed.
-    *   `404 Not Found`: Potentially if the specified payment method doesn't exist or belong to the user (depending on implementation checks).
     *   `500 Internal Server Error`: Database or other server error.
 
 ---
