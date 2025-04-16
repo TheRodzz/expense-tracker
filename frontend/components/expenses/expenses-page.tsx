@@ -54,6 +54,84 @@ export function ExpensesPage() {
     type: undefined,
   })
   const [totalExpenses, setTotalExpenses] = useState(0)
+  const [isExporting, setIsExporting] = useState(false)
+
+  // --- Export CSV Handler ---
+  const handleExportCSV = async () => {
+  setIsExporting(true)
+  try {
+    // Fetch all expenses in batches of 500 (backend limit)
+    const BATCH_LIMIT = 500
+    let skip = 0
+    let allExpenses: Expense[] = []
+    let keepFetching = true
+    while (keepFetching) {
+      const exportFilters: ExpenseFilters = {
+        ...filters,
+        skip,
+        limit: BATCH_LIMIT,
+      }
+      const batch = await getExpenses(exportFilters)
+      if (!Array.isArray(batch)) {
+        toast.error("Failed to fetch expenses for export.")
+        setIsExporting(false)
+        return
+      }
+      allExpenses = allExpenses.concat(batch)
+      if (batch.length < BATCH_LIMIT) {
+        keepFetching = false
+      } else {
+        skip += BATCH_LIMIT
+      }
+    }
+    if (allExpenses.length === 0) {
+      toast.info("No expenses to export for the selected filters.")
+      setIsExporting(false)
+      return
+    }
+    // Prepare CSV headers
+    const headers = [
+      "Date",
+      "Amount",
+      "Type",
+      "Category",
+      "Payment Method",
+      "Description"
+    ]
+    // Helper to lookup names
+    const getCategoryName = (categoryId: string) => categories.find((c) => c.id === categoryId)?.name || ""
+    const getPaymentMethodName = (paymentMethodId: string) => paymentMethods.find((m) => m.id === paymentMethodId)?.name || ""
+    // Prepare rows
+    const rows = allExpenses.map((exp: Expense) => [
+      new Date(exp.timestamp).toLocaleDateString(),
+      exp.amount,
+      exp.type,
+      getCategoryName(exp.category_id),
+      getPaymentMethodName(exp.payment_method_id),
+      exp.description?.replace(/\n/g, " ") || ""
+    ])
+    // CSV content
+    const csvContent = [headers, ...rows]
+      .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(","))
+      .join("\n")
+    // Download
+    const blob = new Blob([csvContent], { type: "text/csv" })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = `expenses_export_${Date.now()}.csv`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+    toast.success("CSV exported!")
+  } catch (err) {
+    toast.error("Failed to export CSV.")
+    console.log(err);
+  } finally {
+    setIsExporting(false)
+  }
+}
 
   // Effect to handle query parameters on initial load
   useEffect(() => {
@@ -324,6 +402,17 @@ export function ExpensesPage() {
               </div>
             </div>
           </CardContent>
+          {/* Export CSV Button */}
+          <div className="flex justify-end mt-2">
+  <Button
+    onClick={handleExportCSV}
+    disabled={isExporting || isLoadingExpenses || isLoadingData}
+    variant="outline"
+    className="ml-2 px-4"
+  >
+    {isExporting ? "Exporting..." : "Export CSV"}
+  </Button>
+</div>
         </Card>
 
         {/* Loading state for the expenses list */}
