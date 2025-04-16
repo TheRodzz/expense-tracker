@@ -36,7 +36,6 @@ import {
   Cell,
   ResponsiveContainer,
   Tooltip,
-  Legend,
   Text,
   LineChart,
   Line,
@@ -538,82 +537,116 @@ export function AnalyticsPage() {
                 </p>
               )}
             </CardHeader>
-            <CardContent className="h-[300px] sm:h-[350px] pt-4">
-              {isLoading ? (
-                <div className="flex items-center justify-center h-full">
-                  <div className="flex flex-col items-center gap-2">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                    <p className="text-sm text-muted-foreground">Loading chart data...</p>
-                  </div>
-                </div>
-              ) : categorySpendingData.length > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={categorySpendingData}
-                      cx="50%"
-                      cy="50%" // Center vertically
-                      labelLine={false} // Disable connector lines for labels
-                      label={renderCustomizedLabel} // Use custom internal labels
-                      outerRadius={110} // Adjust radius for aesthetics
-                      innerRadius={70} // Create a donut chart effect
-                      fill="#8884d8" // Default fill (overridden by Cells)
-                      dataKey="value" // Data key for slice values
-                      nameKey="name" // Data key for slice names (used by tooltip/legend)
-                      paddingAngle={1} // Add small padding between slices
-                      animationDuration={750}
-                      animationBegin={0}
-                    >
-                      {/* Map data to Cells with assigned colors */}
-                      {categorySpendingData.map((entry, index) => (
-                        <Cell
-                          key={`cell-${index}`}
-                          fill={COLORS[index % COLORS.length]} // Cycle through defined colors
-                          stroke={COLORS[index % COLORS.length]} // Outline for emphasis on hover maybe
-                          strokeWidth={1}
-                          style={{ outline: "none" }} // Remove default focus outline
-                        />
-                      ))}
-                    </Pie>
-                    {/* Use the custom tooltip component */}
-                    <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(200, 200, 200, 0.1)" }} />
-                    {/* Position legend at the bottom, remove fixed height to allow wrapping */}
-                    <Legend
-                      verticalAlign="bottom"
-                      layout="horizontal" // Default, but explicit
-                      iconSize={10}
-                      wrapperStyle={{ paddingTop: "10px" }} // Allow wrapping
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-              ) : (
-                // Enhanced "No Data" state message
-                <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-12 w-12 opacity-50 mb-3 text-muted-foreground"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={1.5}
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M7.5 14.25v2.25m3-4.5v4.5m3-6.75v6.75m3-9v9M6 20.25h12A2.25 2.25 0 0020.25 18V6A2.25 2.25 0 0018 3.75H6A2.25 2.25 0 003.75 6v12A2.25 2.25 0 006 20.25z"
-                    />
-                  </svg>
-                  <p className="text-md font-medium">No Spending Data</p>
-                  <p className="text-sm opacity-80 mt-1">No spending recorded for the selected period.</p>
-                  <Button variant="outline" size="sm" className="mt-4" asChild>
-                    <Link href="/expenses?action=add">
-                      <PlusCircle className="h-4 w-4 mr-2" />
-                      Add Transaction
-                    </Link>
-                  </Button>
-                </div>
-              )}
-            </CardContent>
+            <CardContent className="pt-4 overflow-x-auto w-full max-w-full" style={{ minHeight: 220 }}>
+  <div className="w-full flex justify-center items-center">
+    {isLoading ? (
+      <div className="flex items-center justify-center h-[220px] w-full">
+        <div className="flex flex-col items-center gap-2">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-sm text-muted-foreground">Loading chart data...</p>
+        </div>
+      </div>
+    ) : categorySpendingData.length > 0 ? (
+      <div className="w-full flex justify-center">
+        <ResponsiveContainer
+          width="100%"
+          height={window.innerWidth < 640 ? 220 : 300}
+          className="max-w-xs sm:max-w-md md:max-w-lg lg:max-w-xl w-full"
+        >
+          <PieChart>
+            <Pie
+              data={categorySpendingData}
+              cx="50%"
+              cy="50%"
+              labelLine={false}
+              label={renderCustomizedLabel}
+              outerRadius={window.innerWidth < 640 ? 80 : 110}
+              innerRadius={window.innerWidth < 640 ? 48 : 70}
+              fill="#8884d8"
+              dataKey="value"
+              nameKey="name"
+              paddingAngle={1}
+              animationDuration={750}
+              animationBegin={0}
+            >
+              {categorySpendingData.map((entry, index) => (
+                <Cell
+                  key={`cell-${index}`}
+                  fill={COLORS[index % COLORS.length]}
+                  stroke={COLORS[index % COLORS.length]}
+                  strokeWidth={1}
+                  style={{ outline: "none" }}
+                />
+              ))}
+            </Pie>
+            <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(200, 200, 200, 0.1)" }} />
+            {/* Responsive, horizontally scrollable legend for mobile */}
+<div
+  className="w-full mt-2 flex justify-center"
+  style={{
+    overflowX: 'auto',
+    WebkitOverflowScrolling: 'touch',
+    paddingBottom: 4,
+  }}
+>
+  <ul
+    className="flex flex-row flex-nowrap gap-2 px-2"
+    style={{
+      fontSize: window.innerWidth < 640 ? '12px' : '14px',
+      minWidth: 0,
+      margin: 0,
+      padding: 0,
+      listStyle: 'none',
+    }}
+  >
+    {categorySpendingData.map((entry, idx) => (
+      <li key={entry.name} className="flex items-center whitespace-nowrap">
+        <span
+          className="inline-block rounded-full mr-1"
+          style={{
+            width: 10,
+            height: 10,
+            backgroundColor: COLORS[idx % COLORS.length],
+            display: 'inline-block',
+            marginRight: 6,
+          }}
+        />
+        <span>{entry.name}</span>
+      </li>
+    ))}
+  </ul>
+</div>
+          </PieChart>
+        </ResponsiveContainer>
+      </div>
+    ) : (
+      <div className="flex flex-col items-center justify-center h-[220px] w-full text-center text-muted-foreground">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className="h-12 w-12 opacity-50 mb-3 text-muted-foreground"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={1.5}
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M7.5 14.25v2.25m3-4.5v4.5m3-6.75v6.75m3-9v9M6 20.25h12A2.25 2.25 0 0020.25 18V6A2.25 2.25 0 0018 3.75H6A2.25 2.25 0 003.75 6v12A2.25 2.25 0 006 20.25z"
+          />
+        </svg>
+        <p className="text-md font-medium">No Spending Data</p>
+        <p className="text-sm opacity-80 mt-1">No spending recorded for the selected period.</p>
+        <Button variant="outline" size="sm" className="mt-4" asChild>
+          <Link href="/expenses?action=add">
+            <PlusCircle className="h-4 w-4 mr-2" />
+            Add Transaction
+          </Link>
+        </Button>
+      </div>
+    )}
+  </div>
+</CardContent>
           </Card>
 
           {/* Spending Trend Line Chart Card */}
