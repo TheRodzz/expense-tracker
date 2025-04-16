@@ -11,7 +11,7 @@ const nextConfig = {
         headers: [
           { key: "Access-Control-Allow-Credentials", value: "true" },
           // Allow requests from the specific Vercel frontend URL
-          { key: "Access-Control-Allow-Origin", value: "http://localhost:3001" }, 
+          { key: "Access-Control-Allow-Origin", value: "https://expense-tracker-frontend-phi-nine.vercel.app" }, 
           // Allowed methods for CORS preflight
           { key: "Access-Control-Allow-Methods", value: "GET,DELETE,PATCH,POST,PUT,OPTIONS" },
           // Allowed headers for CORS preflight
