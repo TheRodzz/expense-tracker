@@ -59,17 +59,13 @@ frontend/
 ### 2. Install Dependencies
 ```bash
 npm install
-# or
-yarn install
-# or
-pnpm install
 ```
 
 ### 3. Run the Development Server
 ```bash
 npm run dev
 ```
-Visit [http://localhost:3000](http://localhost:3000) to view the app.
+Visit [http://localhost:3001](http://localhost:3001) to view the app.
 
 
 ---

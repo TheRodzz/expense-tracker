@@ -11,7 +11,6 @@ A robust, secure, and extensible backend for the Expense Tracker application, bu
 - **Analytics Endpoints:** Summarized data for reporting and charts
 - **RESTful API:** Well-documented endpoints (see `API_DOCUMENTATION.md`)
 - **Type Safety:** Developed in TypeScript
-- **Testing:** Includes test setup with Vitest and Supertest
 - **Dockerized:** Easy containerized deployment
 
 ---
@@ -21,7 +20,6 @@ A robust, secure, and extensible backend for the Expense Tracker application, bu
 - **Language:** [TypeScript](https://www.typescriptlang.org/)
 - **Database:** [Supabase](https://supabase.com/) (PostgreSQL, auth)
 - **ORM/Validation:** [Zod](https://zod.dev/) for schemas
-- **Testing:** [Vitest](https://vitest.dev/), [Supertest](https://github.com/ladjs/supertest)
 - **Linting:** ESLint
 - **Containerization:** Docker
 
@@ -38,7 +36,7 @@ backend/
 ├── test.py             # (If present) Test scripts
 ├── package.json        # Project dependencies and scripts
 ├── Dockerfile          # Docker build instructions
-├── .env, .env.local    # Environment variables (DO NOT COMMIT secrets)
+├── .env, .env.local    
 └── ...
 ```
 
@@ -58,7 +56,6 @@ SUPABASE_URL=your-supabase-url
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 SUPABASE_ANON_KEY=your-anon-key
 JWT_SECRET=your-jwt-secret
-...other config
 ```
 
 ### 3. Install Dependencies
@@ -78,7 +75,7 @@ The backend will run at [http://localhost:3000](http://localhost:3000).
 ### Build and Run with Docker
 ```bash
 docker build -t expense-tracker-backend .
-docker run -p 3000:3000 --env-file .env.local expense-tracker-backend
+docker run -p 3000:3000 expense-tracker-backend
 ```
 
 ---
@@ -121,16 +118,13 @@ Main endpoint groups:
 ---
 
 ## 📜 License
-MIT (or specify your license here)
-
+MIT
 ---
 
 ## 🙏 Acknowledgements
 - [Next.js](https://nextjs.org/)
 - [Supabase](https://supabase.com/)
 - [Zod](https://zod.dev/)
-- [Vitest](https://vitest.dev/)
-- [Supertest](https://github.com/ladjs/supertest)
 
 ---
 
