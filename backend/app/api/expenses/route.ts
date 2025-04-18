@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
 
         // Apply sorting and pagination
         query = query
-            .order('timestamp', { ascending: false }) // Default sort: newest first
+            .order('created_at', { ascending: false }) // Default sort: newest first
             .range(skip!, skip! + limit! - 1); // Add null assertion as defaults are set
 
         const { data, error } = await query;
