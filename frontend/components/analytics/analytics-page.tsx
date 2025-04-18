@@ -41,6 +41,9 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
+  BarChart,
+  Bar,
+  Legend,
   type TooltipProps, // Import TooltipProps type
 } from "recharts"
 import { CalendarDays, DollarSign, PiggyBank, TrendingUp, PlusCircle } from "lucide-react"
@@ -146,6 +149,7 @@ export type CategorySpendSummaryWithExpenseFlag = {
 
 export function AnalyticsPage() {
   const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
   const { isLoading: authLoading } = useAuth()
   const [isLoading, setIsLoading] = useState(true)
   const [allExpenses, setAllExpenses] = useState<Expense[]>([])
@@ -955,7 +959,89 @@ export function AnalyticsPage() {
             )}
           </CardContent>
         </Card>
-        {/* Add more report cards/sections here as needed */}
+        {/* --- Category-wise Spend Bar Graph --- */}
+        <Card className="mt-8">
+          <CardHeader>
+            <CardTitle>Category-wise Spend (Bar Graph)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {averageSpendData && averageSpendData.filter(row => row.is_expense).length > 0 ? (
+              <div>
+                {(() => {
+                  const expenseData = [...averageSpendData.filter(row => row.is_expense)].sort((a, b) => b.totalAmount - a.totalAmount)
+                  const categoryCount = expenseData.length
+                  // Dynamic height: 48px per category, min 250, max 700
+                  const chartHeight = Math.min(Math.max(categoryCount * 48, 250), 700)
+                  // Bar size and font size adjustments
+                  const barSize = categoryCount > 12 ? 18 : 28
+                  const labelFontSize = categoryCount > 12 ? 11 : 14
+                  // Theme-aware colors
+                  const labelColor = isDark ? "#fff" : "#333";
+                  const axisColor = isDark ? "#ccc" : "#333";
+                  const gridColor = isDark ? "rgba(255,255,255,0.12)" : "#e0e0e0";
+                  return (
+                    <ResponsiveContainer width="100%" height={chartHeight}>
+                      <BarChart
+                        data={expenseData}
+                        layout="vertical"
+                        margin={{ top: 16, right: 32, left: 0, bottom: 16 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
+                        <XAxis 
+                          type="number"
+                          tickFormatter={value => `₹${value.toLocaleString()}`}
+                          tick={{ fill: axisColor, fontSize: labelFontSize }}
+                          axisLine={{ stroke: axisColor }}
+                          tickLine={{ stroke: axisColor }}
+                        />
+                        <YAxis 
+                          dataKey="categoryName" 
+                          type="category" 
+                          width={120}
+                          tick={{ fill: axisColor, fontSize: labelFontSize }}
+                          axisLine={{ stroke: axisColor }}
+                          tickLine={{ stroke: axisColor }}
+                        />
+                        <Tooltip 
+                          contentStyle={{ background: isDark ? "#23272e" : "#fff", border: `1px solid ${isDark ? "#444" : "#eee"}` }}
+                          labelStyle={{ color: isDark ? "#fff" : "#333" }}
+                          itemStyle={{ color: isDark ? "#fff" : "#333" }}
+                          formatter={(value: number) => `₹${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                        />
+                        <Legend wrapperStyle={{ color: axisColor }} />
+                        <Bar
+                          dataKey="totalAmount"
+                          name="Total Spend"
+                          radius={[8, 8, 8, 8]}
+                          barSize={barSize}
+                          label={({ x, y, width, value }) => (
+                            <text
+                              x={x + width + 8}
+                              y={y + barSize / 2}
+                              fill={labelColor}
+                              fontWeight={600}
+                              fontSize={labelFontSize}
+                              alignmentBaseline="middle"
+                            >
+                              ₹{Number(value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </text>
+                          )}
+                        >
+                          {expenseData.map((entry, idx) => (
+                            <Cell key={`cell-${entry.categoryId}`} fill={COLORS[idx % COLORS.length]} />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  )
+                })()}
+              </div>
+            ) : (
+              <div className="text-muted-foreground text-center py-2">No expense data to display.</div>
+            )}
+          </CardContent>
+        </Card>
+
       </div>
 
     </div> /* End Main Container */
