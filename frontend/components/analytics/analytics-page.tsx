@@ -575,35 +575,25 @@ export function AnalyticsPage() {
               </div>
 
               <div className="space-y-2">
-                <Label>Quick Periods</Label>
-                <div className="grid grid-cols-2 gap-2">
-                  {predefinedPeriods.slice(0, 4).map((period) => (
-                    <Button
-                      key={period.key}
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handlePeriodSelect(period.key)}
-                      disabled={isLoading || authLoading}
-                      className="justify-start"
-                    >
+                <Label htmlFor="periodDropdown">Quick Period</Label>
+                <select
+                  id="periodDropdown"
+                  className="w-full dark:bg-input dark:border-border rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  onChange={(e) => {
+                    if (e.target.value) handlePeriodSelect(e.target.value);
+                  }}
+                  disabled={isLoading || authLoading}
+                  defaultValue=""
+                >
+                  <option value="" disabled>
+                    Select a period
+                  </option>
+                  {predefinedPeriods.map((period) => (
+                    <option key={period.key} value={period.key}>
                       {period.label}
-                    </Button>
+                    </option>
                   ))}
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  {predefinedPeriods.slice(4).map((period) => (
-                    <Button
-                      key={period.key}
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handlePeriodSelect(period.key)}
-                      disabled={isLoading || authLoading}
-                      className="justify-start"
-                    >
-                      {period.label}
-                    </Button>
-                  ))}
-                </div>
+                </select>
               </div>
             </div>
           </CardContent>
