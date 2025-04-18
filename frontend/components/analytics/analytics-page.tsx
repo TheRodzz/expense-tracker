@@ -28,7 +28,6 @@ import {
   subYears,
 } from "date-fns"
 import { toast } from "sonner"
-// Import necessary Recharts components and types
 import {
   PieChart,
   Pie,
@@ -44,7 +43,7 @@ import {
   BarChart,
   Bar,
   Legend,
-  type TooltipProps, // Import TooltipProps type
+  type TooltipProps,
 } from "recharts"
 import { CalendarDays, DollarSign, PiggyBank, TrendingUp, PlusCircle } from "lucide-react"
 import Link from "next/link"
@@ -166,6 +165,17 @@ export function AnalyticsPage() {
   const totalIncome = useMemo(() => allExpenses.filter(e => e.type === "Income").reduce((sum, e) => sum + e.amount, 0), [allExpenses]);
   const totalExpense = useMemo(() => allExpenses.filter(e => e.type === "Need" || e.type === "Want").reduce((sum, e) => sum + e.amount, 0), [allExpenses]);
   const totalInvestment = useMemo(() => allExpenses.filter(e => e.type === "Investment").reduce((sum, e) => sum + e.amount, 0), [allExpenses]);
+  const typeSpendingData = useMemo(() => {
+    const totalsByType = { Need: 0, Want: 0, Investment: 0 };
+    allExpenses.forEach(expense => {
+      if (expense.type !== "Income") {
+        totalsByType[expense.type] += expense.amount;
+      }
+    });
+
+    return Object.entries(totalsByType).map(([name, value]) => ({ name, value }));
+  }, [allExpenses]);
+
   // Currency formatter (reuse from dashboard)
   const formatCurrency = (amount: number) => new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" }).format(amount);
 
@@ -616,242 +626,330 @@ export function AnalyticsPage() {
               )}
             </CardHeader>
             <CardContent className="pt-4 overflow-x-auto w-full max-w-full" style={{ minHeight: 220 }}>
-  <div className="w-full flex justify-center items-center">
-    {isLoading ? (
-      <div className="flex items-center justify-center h-[220px] w-full">
-        <div className="flex flex-col items-center gap-2">
-          <p className="text-sm text-muted-foreground">Loading chart data...</p>
-        </div>
-      </div>
-    ) : categorySpendingData.length > 0 ? (
-      <div className="w-full flex justify-center">
-        <ResponsiveContainer
-          width="100%"
-          height={window.innerWidth < 640 ? 220 : 300}
-          className="max-w-xs sm:max-w-md md:max-w-lg lg:max-w-xl w-full"
-        >
-          <PieChart>
-            <Pie
-              data={categorySpendingData}
-              cx="50%"
-              cy="50%"
-              labelLine={false}
-              label={renderCustomizedLabel}
-              outerRadius={window.innerWidth < 640 ? 80 : 110}
-              innerRadius={window.innerWidth < 640 ? 48 : 70}
-              fill="#8884d8"
-              dataKey="value"
-              nameKey="name"
-              paddingAngle={1}
-              animationDuration={750}
-              animationBegin={0}
-            >
-              {categorySpendingData.map((entry, index) => (
-                <Cell
-                  key={`cell-${index}`}
-                  fill={COLORS[index % COLORS.length]}
-                  stroke={COLORS[index % COLORS.length]}
-                  strokeWidth={1}
-                  style={{ outline: "none" }}
-                />
-              ))}
-            </Pie>
-            <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(200, 200, 200, 0.1)" }} />
-            {/* Responsive, horizontally scrollable legend for mobile */}
-<div
-  className="w-full mt-2 flex justify-center"
-  style={{
-    overflowX: 'auto',
-    WebkitOverflowScrolling: 'touch',
-    paddingBottom: 4,
-  }}
->
-  <ul
-    className="flex flex-row flex-nowrap gap-2 px-2"
-    style={{
-      fontSize: window.innerWidth < 640 ? '12px' : '14px',
-      minWidth: 0,
-      margin: 0,
-      padding: 0,
-      listStyle: 'none',
-    }}
-  >
-    {categorySpendingData.map((entry, idx) => (
-      <li key={entry.name} className="flex items-center whitespace-nowrap">
-        <span
-          className="inline-block rounded-full mr-1"
-          style={{
-            width: 10,
-            height: 10,
-            backgroundColor: COLORS[idx % COLORS.length],
-            display: 'inline-block',
-            marginRight: 6,
-          }}
-        />
-        <span>{entry.name}</span>
-      </li>
-    ))}
-  </ul>
-</div>
-          </PieChart>
-        </ResponsiveContainer>
-      </div>
-    ) : (
-      <div className="flex flex-col items-center justify-center h-[220px] w-full text-center text-muted-foreground">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          className="h-12 w-12 opacity-50 mb-3 text-muted-foreground"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth={1.5}
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M7.5 14.25v2.25m3-4.5v4.5m3-6.75v6.75m3-9v9M6 20.25h12A2.25 2.25 0 0020.25 18V6A2.25 2.25 0 0018 3.75H6A2.25 2.25 0 003.75 6v12A2.25 2.25 0 006 20.25z"
-          />
-        </svg>
-        <p className="text-md font-medium">No Spending Data</p>
-        <p className="text-sm opacity-80 mt-1">No spending recorded for the selected period.</p>
-        <Button variant="outline" size="sm" className="mt-4" asChild>
-          <Link href="/expenses?action=add">
-            <PlusCircle className="h-4 w-4 mr-2" />
-            Add Transaction
-          </Link>
-        </Button>
-      </div>
-    )}
-  </div>
-</CardContent>
+              <div className="w-full flex justify-center items-center">
+                {isLoading ? (
+                  <div className="flex items-center justify-center h-[220px] w-full">
+                    <div className="flex flex-col items-center gap-2">
+                      <p className="text-sm text-muted-foreground">Loading chart data...</p>
+                    </div>
+                  </div>
+                ) : categorySpendingData.length > 0 ? (
+                  <div className="w-full flex justify-center">
+                    <ResponsiveContainer
+                      width="100%"
+                      height={window.innerWidth < 640 ? 220 : 300}
+                      className="max-w-xs sm:max-w-md md:max-w-lg lg:max-w-xl w-full"
+                    >
+                      <PieChart>
+                        <Pie
+                          data={categorySpendingData}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          label={renderCustomizedLabel}
+                          outerRadius={window.innerWidth < 640 ? 80 : 110}
+                          innerRadius={window.innerWidth < 640 ? 48 : 70}
+                          fill="#8884d8"
+                          dataKey="value"
+                          nameKey="name"
+                          paddingAngle={1}
+                          animationDuration={750}
+                          animationBegin={0}
+                        >
+                          {categorySpendingData.map((entry, index) => (
+                            <Cell
+                              key={`cell-${index}`}
+                              fill={COLORS[index % COLORS.length]}
+                              stroke={COLORS[index % COLORS.length]}
+                              strokeWidth={1}
+                              style={{ outline: "none" }}
+                            />
+                          ))}
+                        </Pie>
+                        <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(200, 200, 200, 0.1)" }} />
+                        {/* Responsive, horizontally scrollable legend for mobile */}
+                        <div
+                          className="w-full mt-2 flex justify-center"
+                          style={{
+                            overflowX: 'auto',
+                            WebkitOverflowScrolling: 'touch',
+                            paddingBottom: 4,
+                          }}
+                        >
+                          <ul
+                            className="flex flex-row flex-nowrap gap-2 px-2"
+                            style={{
+                              fontSize: window.innerWidth < 640 ? '12px' : '14px',
+                              minWidth: 0,
+                              margin: 0,
+                              padding: 0,
+                              listStyle: 'none',
+                            }}
+                          >
+                            {categorySpendingData.map((entry, idx) => (
+                              <li key={entry.name} className="flex items-center whitespace-nowrap">
+                                <span
+                                  className="inline-block rounded-full mr-1"
+                                  style={{
+                                    width: 10,
+                                    height: 10,
+                                    backgroundColor: COLORS[idx % COLORS.length],
+                                    display: 'inline-block',
+                                    marginRight: 6,
+                                  }}
+                                />
+                                <span>{entry.name}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-[220px] w-full text-center text-muted-foreground">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-12 w-12 opacity-50 mb-3 text-muted-foreground"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={1.5}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M7.5 14.25v2.25m3-4.5v4.5m3-6.75v6.75m3-9v9M6 20.25h12A2.25 2.25 0 0020.25 18V6A2.25 2.25 0 0018 3.75H6A2.25 2.25 0 003.75 6v12A2.25 2.25 0 006 20.25z"
+                      />
+                    </svg>
+                    <p className="text-md font-medium">No Spending Data</p>
+                    <p className="text-sm opacity-80 mt-1">No spending recorded for the selected period.</p>
+                    <Button variant="outline" size="sm" className="mt-4" asChild>
+                      <Link href="/expenses?action=add">
+                        <PlusCircle className="h-4 w-4 mr-2" />
+                        Add Transaction
+                      </Link>
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </CardContent>
           </Card>
-
-          {/* Spending Trend Line Chart Card */}
           <Card className="dark:bg-card overflow-hidden">
             <CardHeader className="border-b">
               <CardTitle className="flex items-center">
-                <TrendingUp className="h-5 w-5 mr-2 text-primary" />
-                Spending Trend
+                <PieChart className="h-5 w-5 mr-2 text-primary" />
+                Spending by Type
               </CardTitle>
-              {!isLoading && spendingTrendData.length <= 1 && (
-                <p className="text-sm text-muted-foreground">Need at least two days with spending for a trend line.</p>
+              {!isLoading && totalSpending > 0 && (
+                <p className="text-sm text-muted-foreground">
+                  Total Spent: ₹
+                  {totalSpending.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </p>
               )}
             </CardHeader>
-            <CardContent className="h-[300px] sm:h-[350px] pt-4">
-              {isLoading ? (
-                <div className="flex items-center justify-center h-full">
-                  <div className="flex flex-col items-center gap-2">
-                    <p className="text-sm text-muted-foreground">Loading chart data...</p>
+            <CardContent className="pt-4 overflow-x-auto w-full max-w-full" style={{ minHeight: 220 }}>
+              <div className="w-full flex justify-center items-center">
+                {isLoading ? (
+                  <div className="flex items-center justify-center h-[220px] w-full">
+                    <div className="flex flex-col items-center gap-2">
+                      <p className="text-sm text-muted-foreground">Loading chart data...</p>
+                    </div>
                   </div>
-                </div>
-              ) : spendingTrendData.length > 1 ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={spendingTrendData} margin={{ top: 5, right: 30, left: 20, bottom: 50 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                    <XAxis
-                      dataKey="date"
-                      tickFormatter={(dateStr) => format(new Date(dateStr), "MMM d")}
-                      angle={-45}
-                      textAnchor="end"
-                      height={60}
-                      interval="preserveStartEnd"
-                      tick={{ fontSize: 12 }}
-                      stroke="var(--muted-foreground)"
-                    />
-                    <YAxis
-                      tickFormatter={(value) => `₹${value.toLocaleString()}`}
-                      width={70}
-                      tick={{ fontSize: 12 }}
-                      axisLine={false}
-                      tickLine={false}
-                      stroke="var(--muted-foreground)"
-                    />
-                    <Tooltip
-                      content={({ active, payload, label }) => {
-                        if (active && payload && payload.length && payload[0] && typeof payload[0].value === "number") {
-                          return (
-                            <div className="p-3 bg-background border rounded shadow-sm text-sm dark:bg-popover dark:border-border">
-                              <p className="font-semibold">{format(new Date(label), "PPP")}</p>
-                              <p className="text-muted-foreground mt-1">{`Spending: ₹${payload[0].value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</p>
-                            </div>
-                          )
-                        }
-                        return null
-                      }}
-                      cursor={{ stroke: "var(--muted-foreground)", strokeWidth: 1, strokeDasharray: "3 3" }}
-                    />
-                    {resolvedTheme === "dark" ? (
-                      <Line
-                        type="monotone"
-                        dataKey="totalAmount"
-                        stroke="#60a5fa"
-                        strokeWidth={2.5}
-                        dot={{ r: 3, fill: "#60a5fa", strokeWidth: 1, stroke: "#60a5fa" }}
-                        activeDot={{
-                          r: 6,
-                          strokeWidth: 2,
-                          fill: "#18181b",
-                          stroke: "#60a5fa",
-                        }}
-                        name="Daily Spending"
-                        connectNulls={true}
-                        isAnimationActive={true}
-                        animationDuration={750}
-                        animationBegin={0}
+                ) : typeSpendingData.length > 0 ? (
+                  <div className="w-full flex justify-center">
+                    <ResponsiveContainer
+                      width="100%"
+                      height={window.innerWidth < 640 ? 220 : 300}
+                      className="max-w-xs sm:max-w-md md:max-w-lg lg:max-w-xl w-full"
+                    >
+                      <PieChart>
+                        <Pie
+                          data={typeSpendingData}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          label={renderCustomizedLabel}
+                          outerRadius={window.innerWidth < 640 ? 80 : 110}
+                          innerRadius={window.innerWidth < 640 ? 48 : 70}
+                          fill="#8884d8"
+                          dataKey="value"
+                          nameKey="name"
+                          paddingAngle={1}
+                          animationDuration={750}
+                          animationBegin={0}
+                        >
+                          {typeSpendingData.map((entry, index) => (
+                            <Cell
+                              key={`cell-${index}`}
+                              fill={COLORS[index % COLORS.length]}
+                              stroke={COLORS[index % COLORS.length]}
+                              strokeWidth={1}
+                              style={{ outline: "none" }}
+                            />
+                          ))}
+                        </Pie>
+                        <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(200, 200, 200, 0.1)" }} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-[220px] w-full text-center text-muted-foreground">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-12 w-12 opacity-50 mb-3 text-muted-foreground"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={1.5}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M7.5 14.25v2.25m3-4.5v4.5m3-6.75v6.75m3-9v9M6 20.25h12A2.25 2.25 0 0020.25 18V6A2.25 2.25 0 0018 3.75H6A2.25 2.25 0 003.75 6v12A2.25 2.25 0 006 20.25z"
                       />
-                    ) : (
-                      <Line
-                        type="monotone"
-                        dataKey="totalAmount"
-                        stroke="#2563eb"
-                        strokeWidth={2.5}
-                        dot={{ r: 3, fill: "#2563eb", strokeWidth: 1, stroke: "#2563eb" }}
-                        activeDot={{
-                          r: 6,
-                          strokeWidth: 2,
-                          fill: "#fff",
-                          stroke: "#2563eb",
-                        }}
-                        name="Daily Spending"
-                        connectNulls={true}
-                        isAnimationActive={true}
-                        animationDuration={750}
-                        animationBegin={0}
-                      />
-                    )}
-                  </LineChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-12 w-12 opacity-50 mb-3 text-muted-foreground"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={1.5}
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0118 16.5h-2.25m-7.5 0h7.5m-7.5 0l-1 1.085-1.085-1.085m0 0l-1 1.085-1.085-1.085m0 0l-1 1.085-1.085-1.085m0 0l-1 1.085-1.085-1.085M12 4.5v6.75m0 0l1.5-1.5m-1.5 1.5L10.5 9.75"
-                    />
-                  </svg>
-                  <p className="text-md font-medium">Not Enough Data for Trend</p>
-                  <p className="text-sm opacity-80 mt-1">
-                    Requires spending on at least two different days in the selected period.
-                  </p>
-                  <Button variant="outline" size="sm" className="mt-4" asChild>
-                    <Link href="/expenses?action=add">
-                      <PlusCircle className="h-4 w-4 mr-2" />
-                      Add Transaction
-                    </Link>
-                  </Button>
-                </div>
-              )}
+                    </svg>
+                    <p className="text-md font-medium">No Spending Data</p>
+                    <p className="text-sm opacity-80 mt-1">No spending recorded for the selected period.</p>
+                    <Button variant="outline" size="sm" className="mt-4" asChild>
+                      <Link href="/expenses?action=add">
+                        <PlusCircle className="h-4 w-4 mr-2" />
+                        Add Transaction
+                      </Link>
+                    </Button>
+                  </div>
+                )}
+              </div>
             </CardContent>
           </Card>
+
+
         </div>
+        {/* Spending Trend Line Chart Card */}
+        <Card className="dark:bg-card overflow-hidden">
+          <CardHeader className="border-b">
+            <CardTitle className="flex items-center">
+              <TrendingUp className="h-5 w-5 mr-2 text-primary" />
+              Spending Trend
+            </CardTitle>
+            {!isLoading && spendingTrendData.length <= 1 && (
+              <p className="text-sm text-muted-foreground">Need at least two days with spending for a trend line.</p>
+            )}
+          </CardHeader>
+          <CardContent className="h-[300px] sm:h-[350px] pt-4">
+            {isLoading ? (
+              <div className="flex items-center justify-center h-full">
+                <div className="flex flex-col items-center gap-2">
+                  <p className="text-sm text-muted-foreground">Loading chart data...</p>
+                </div>
+              </div>
+            ) : spendingTrendData.length > 1 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={spendingTrendData} margin={{ top: 5, right: 30, left: 20, bottom: 50 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                  <XAxis
+                    dataKey="date"
+                    tickFormatter={(dateStr) => format(new Date(dateStr), "MMM d")}
+                    angle={-45}
+                    textAnchor="end"
+                    height={60}
+                    interval="preserveStartEnd"
+                    tick={{ fontSize: 12 }}
+                    stroke="var(--muted-foreground)"
+                  />
+                  <YAxis
+                    tickFormatter={(value) => `₹${value.toLocaleString()}`}
+                    width={70}
+                    tick={{ fontSize: 12 }}
+                    axisLine={false}
+                    tickLine={false}
+                    stroke="var(--muted-foreground)"
+                  />
+                  <Tooltip
+                    content={({ active, payload, label }) => {
+                      if (active && payload && payload.length && payload[0] && typeof payload[0].value === "number") {
+                        return (
+                          <div className="p-3 bg-background border rounded shadow-sm text-sm dark:bg-popover dark:border-border">
+                            <p className="font-semibold">{format(new Date(label), "PPP")}</p>
+                            <p className="text-muted-foreground mt-1">{`Spending: ₹${payload[0].value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}</p>
+                          </div>
+                        )
+                      }
+                      return null
+                    }}
+                    cursor={{ stroke: "var(--muted-foreground)", strokeWidth: 1, strokeDasharray: "3 3" }}
+                  />
+                  {resolvedTheme === "dark" ? (
+                    <Line
+                      type="monotone"
+                      dataKey="totalAmount"
+                      stroke="#60a5fa"
+                      strokeWidth={2.5}
+                      dot={{ r: 3, fill: "#60a5fa", strokeWidth: 1, stroke: "#60a5fa" }}
+                      activeDot={{
+                        r: 6,
+                        strokeWidth: 2,
+                        fill: "#18181b",
+                        stroke: "#60a5fa",
+                      }}
+                      name="Daily Spending"
+                      connectNulls={true}
+                      isAnimationActive={true}
+                      animationDuration={750}
+                      animationBegin={0}
+                    />
+                  ) : (
+                    <Line
+                      type="monotone"
+                      dataKey="totalAmount"
+                      stroke="#2563eb"
+                      strokeWidth={2.5}
+                      dot={{ r: 3, fill: "#2563eb", strokeWidth: 1, stroke: "#2563eb" }}
+                      activeDot={{
+                        r: 6,
+                        strokeWidth: 2,
+                        fill: "#fff",
+                        stroke: "#2563eb",
+                      }}
+                      name="Daily Spending"
+                      connectNulls={true}
+                      isAnimationActive={true}
+                      animationDuration={750}
+                      animationBegin={0}
+                    />
+                  )}
+                </LineChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-12 w-12 opacity-50 mb-3 text-muted-foreground"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={1.5}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0118 16.5h-2.25m-7.5 0h7.5m-7.5 0l-1 1.085-1.085-1.085m0 0l-1 1.085-1.085-1.085m0 0l-1 1.085-1.085-1.085m0 0l-1 1.085-1.085-1.085M12 4.5v6.75m0 0l1.5-1.5m-1.5 1.5L10.5 9.75"
+                  />
+                </svg>
+                <p className="text-md font-medium">Not Enough Data for Trend</p>
+                <p className="text-sm opacity-80 mt-1">
+                  Requires spending on at least two different days in the selected period.
+                </p>
+                <Button variant="outline" size="sm" className="mt-4" asChild>
+                  <Link href="/expenses?action=add">
+                    <PlusCircle className="h-4 w-4 mr-2" />
+                    Add Transaction
+                  </Link>
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
         {/* End Charts Grid */}
         {/* Category-wise Average Spend Analytics */}
         <Card className="dark:bg-card">
@@ -987,22 +1085,22 @@ export function AnalyticsPage() {
                         margin={{ top: 16, right: 32, left: 0, bottom: 16 }}
                       >
                         <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
-                        <XAxis 
+                        <XAxis
                           type="number"
                           tickFormatter={value => `₹${value.toLocaleString()}`}
                           tick={{ fill: axisColor, fontSize: labelFontSize }}
                           axisLine={{ stroke: axisColor }}
                           tickLine={{ stroke: axisColor }}
                         />
-                        <YAxis 
-                          dataKey="categoryName" 
-                          type="category" 
+                        <YAxis
+                          dataKey="categoryName"
+                          type="category"
                           width={120}
                           tick={{ fill: axisColor, fontSize: labelFontSize }}
                           axisLine={{ stroke: axisColor }}
                           tickLine={{ stroke: axisColor }}
                         />
-                        <Tooltip 
+                        <Tooltip
                           contentStyle={{ background: isDark ? "#23272e" : "#fff", border: `1px solid ${isDark ? "#444" : "#eee"}` }}
                           labelStyle={{ color: isDark ? "#fff" : "#333" }}
                           itemStyle={{ color: isDark ? "#fff" : "#333" }}

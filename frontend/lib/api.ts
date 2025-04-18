@@ -52,10 +52,9 @@ export async function fetchWithCreds(url: string, options: RequestInit = {}, csr
 
 // Categories API
 export type CategoryData = {
-  id?: string // Optional for create
+  id?: string 
   name: string
   is_expense: boolean
-  // Add other fields if needed (e.g., user_id, created_at, updated_at from get response)
 }
 
 export async function getCategories(skip?: number, limit?: number) {
