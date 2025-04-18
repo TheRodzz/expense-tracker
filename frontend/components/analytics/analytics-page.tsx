@@ -44,8 +44,7 @@ import {
   CartesianGrid,
   type TooltipProps, // Import TooltipProps type
 } from "recharts"
-import { CalendarDays } from "lucide-react"
-import { Loader2, TrendingUp, PlusCircle } from "lucide-react"
+import { CalendarDays, DollarSign, PiggyBank, TrendingUp, PlusCircle } from "lucide-react"
 import Link from "next/link"
 
 // --- Constants ---
@@ -151,7 +150,7 @@ export function AnalyticsPage() {
   const { isLoading: authLoading } = useAuth()
   const [isLoading, setIsLoading] = useState(true)
   const [allExpenses, setAllExpenses] = useState<Expense[]>([])
-  const [categories, setCategories] = useState<Category[]>([]) // Use defined Category type
+  const [categories, setCategories] = useState<Category[]>([])
   const [startDate, setStartDate] = useState<string>(() => formatDateForInput(startOfMonth(new Date())))
   const [endDate, setEndDate] = useState<string>(() => formatDateForInput(new Date()))
 
@@ -159,6 +158,13 @@ export function AnalyticsPage() {
   const [averageSpendData, setAverageSpendData] = useState<CategorySpendSummaryWithExpenseFlag[]>([])
   const [averageSpendLoading, setAverageSpendLoading] = useState(false)
   const [averageSpendError, setAverageSpendError] = useState<string | null>(null)
+
+  // ---- Summary calculations for selected period ----
+  const totalIncome = useMemo(() => allExpenses.filter(e => e.type === "Income").reduce((sum, e) => sum + e.amount, 0), [allExpenses]);
+  const totalExpense = useMemo(() => allExpenses.filter(e => e.type === "Need" || e.type === "Want").reduce((sum, e) => sum + e.amount, 0), [allExpenses]);
+  const totalInvestment = useMemo(() => allExpenses.filter(e => e.type === "Investment").reduce((sum, e) => sum + e.amount, 0), [allExpenses]);
+  // Currency formatter (reuse from dashboard)
+  const formatCurrency = (amount: number) => new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR" }).format(amount);
 
   // Fetch all expenses for a given date range with pagination handling
   const fetchAllExpensesForRange = useCallback(async (start: string, end: string) => {
@@ -438,8 +444,7 @@ export function AnalyticsPage() {
       <MainNav />
       <MobileNav />
       <div className="flex-1 space-y-6 p-4 md:p-8 pt-6">
-        <PageHeader title="Analytics & Reports" description="Visualize your financial data over selected periods." />
-        {/* Date Selection Card */}
+        {/* Date Selection Card - now on top */}
         <Card className="dark:bg-card">
           <CardHeader>
             <CardTitle className="text-lg flex items-center">
@@ -449,6 +454,79 @@ export function AnalyticsPage() {
           </CardHeader>
           <CardContent>
             <div className="grid gap-6 md:grid-cols-2">
+              {/* Summary Cards for Selected Period (Responsive) */}
+              <div className="col-span-2 w-full">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                  {/* Total Income */}
+                  <Card className="border-l-4 border-l-green-500">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Total Income</CardTitle>
+                      <TrendingUp className="h-4 w-4 text-green-500" />
+                    </CardHeader>
+                    <CardContent>
+                      {isLoading ? (
+                        <Skeleton className="h-8 w-[100px]" />
+                      ) : (
+                        <div className="text-2xl font-bold text-green-500">
+                          {formatCurrency(totalIncome)}
+                        </div>
+                      )}
+                      <p className="text-xs text-muted-foreground mt-1">Sum of all Income entries</p>
+                    </CardContent>
+                  </Card>
+                  {/* Total Expense */}
+                  <Card className="border-l-4 border-l-red-500">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Total Expense</CardTitle>
+                      <DollarSign className="h-4 w-4 text-red-500" />
+                    </CardHeader>
+                    <CardContent>
+                      {isLoading ? (
+                        <Skeleton className="h-8 w-[100px]" />
+                      ) : (
+                        <div className="text-2xl font-bold text-red-500">
+                          {formatCurrency(totalExpense)}
+                        </div>
+                      )}
+                      <p className="text-xs text-muted-foreground mt-1">Needs + Wants</p>
+                    </CardContent>
+                  </Card>
+                  {/* Total Investment */}
+                  <Card className="border-l-4 border-l-blue-500">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Total Investment</CardTitle>
+                      <PiggyBank className="h-4 w-4 text-blue-500" />
+                    </CardHeader>
+                    <CardContent>
+                      {isLoading ? (
+                        <Skeleton className="h-8 w-[100px]" />
+                      ) : (
+                        <div className="text-2xl font-bold text-blue-500">
+                          {formatCurrency(totalInvestment)}
+                        </div>
+                      )}
+                      <p className="text-xs text-muted-foreground mt-1">Sum of all Investments</p>
+                    </CardContent>
+                  </Card>
+                  {/* Balance */}
+                  <Card className="border-l-4 border-l-purple-500">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">Balance</CardTitle>
+                      <TrendingUp className="h-4 w-4 text-purple-500" />
+                    </CardHeader>
+                    <CardContent>
+                      {isLoading ? (
+                        <Skeleton className="h-8 w-[100px]" />
+                      ) : (
+                        <div className="text-2xl font-bold text-purple-500">
+                          {formatCurrency(totalIncome - totalExpense - totalInvestment)}
+                        </div>
+                      )}
+                      <p className="text-xs text-muted-foreground mt-1">Income - Expenses - Investments</p>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
@@ -476,10 +554,7 @@ export function AnalyticsPage() {
                 </div>
                 <Button onClick={handleDateChange} disabled={isLoading || authLoading} className="w-full">
                   {isLoading ? (
-                    <>
-                      <Loader2 className="animate-spin -ml-1 mr-3 h-5 w-5" />
-                      Loading...
-                    </>
+                    "Loading..."
                   ) : (
                     "Load Report Data"
                   )}
@@ -542,7 +617,6 @@ export function AnalyticsPage() {
     {isLoading ? (
       <div className="flex items-center justify-center h-[220px] w-full">
         <div className="flex flex-col items-center gap-2">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
           <p className="text-sm text-muted-foreground">Loading chart data...</p>
         </div>
       </div>
@@ -664,7 +738,6 @@ export function AnalyticsPage() {
               {isLoading ? (
                 <div className="flex items-center justify-center h-full">
                   <div className="flex flex-col items-center gap-2">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
                     <p className="text-sm text-muted-foreground">Loading chart data...</p>
                   </div>
                 </div>
@@ -885,7 +958,7 @@ export function AnalyticsPage() {
         </Card>
         {/* Add more report cards/sections here as needed */}
       </div>
-      {/* End Page Content Area */}
+
     </div> /* End Main Container */
   )
 }
