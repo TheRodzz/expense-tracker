@@ -615,7 +615,7 @@ export function AnalyticsPage() {
                 </p>
               )}
             </CardHeader>
-            <CardContent className="pt-4 overflow-x-auto w-full max-w-full" style={{ minHeight: 220 }}>
+            <CardContent className="pt-4 overflow-visible w-full max-w-full" style={{ minHeight: 320 }}>
               <div className="w-full flex justify-center items-center">
                 {isLoading ? (
                   <div className="flex items-center justify-center h-[220px] w-full">
@@ -624,77 +624,94 @@ export function AnalyticsPage() {
                     </div>
                   </div>
                 ) : categorySpendingData.length > 0 ? (
-                  <div className="w-full flex justify-center">
-                    <ResponsiveContainer
-                      width="100%"
-                      height={window.innerWidth < 640 ? 220 : 300}
-                      className="max-w-xs sm:max-w-md md:max-w-lg lg:max-w-xl w-full"
-                    >
-                      <PieChart>
-                        <Pie
-                          data={categorySpendingData}
-                          cx="50%"
-                          cy="50%"
-                          labelLine={false}
-                          label={renderCustomizedLabel}
-                          outerRadius={window.innerWidth < 640 ? 80 : 110}
-                          innerRadius={window.innerWidth < 640 ? 48 : 70}
-                          fill="#8884d8"
-                          dataKey="value"
-                          nameKey="name"
-                          paddingAngle={1}
-                          animationDuration={750}
-                          animationBegin={0}
-                        >
-                          {categorySpendingData.map((entry, index) => (
-                            <Cell
-                              key={`cell-${index}`}
-                              fill={COLORS[index % COLORS.length]}
-                              stroke={COLORS[index % COLORS.length]}
-                              strokeWidth={1}
-                              style={{ outline: "none" }}
-                            />
-                          ))}
-                        </Pie>
-                        <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(200, 200, 200, 0.1)" }} />
-                        {/* Responsive, horizontally scrollable legend for mobile */}
-                        <div
-                          className="w-full mt-2 flex justify-center"
-                          style={{
-                            overflowX: 'auto',
-                            WebkitOverflowScrolling: 'touch',
-                            paddingBottom: 4,
-                          }}
-                        >
-                          <ul
-                            className="flex flex-row flex-nowrap gap-2 px-2"
-                            style={{
-                              fontSize: window.innerWidth < 640 ? '12px' : '14px',
-                              minWidth: 0,
-                              margin: 0,
-                              padding: 0,
-                              listStyle: 'none',
-                            }}
+                  <div className="w-full flex flex-col items-center">
+                    {/* Add extra padding at the top on mobile to prevent cutting off */}
+                    <div className="pt-6 sm:pt-0 w-full">
+                      <ResponsiveContainer
+                        width="100%"
+                        height={window.innerWidth < 640 ? 260 : 300}
+                        className="max-w-xs sm:max-w-md md:max-w-lg lg:max-w-xl w-full"
+                      >
+                        <PieChart margin={{ top: 30, right: 0, bottom: 5, left: 0 }}>
+                          <Pie
+                            data={categorySpendingData}
+                            cx="50%"
+                            cy="50%"
+                            labelLine={false}
+                            label={renderCustomizedLabel}
+                            outerRadius={window.innerWidth < 640 ? 80 : 110}
+                            innerRadius={window.innerWidth < 640 ? 48 : 70}
+                            fill="#8884d8"
+                            dataKey="value"
+                            nameKey="name"
+                            paddingAngle={1}
+                            animationDuration={750}
+                            animationBegin={0}
                           >
-                            {categorySpendingData.map((entry, idx) => (
-                              <li key={entry.name} className="flex items-center whitespace-nowrap">
-                                <span
-                                  className="inline-block rounded-full mr-1"
-                                  style={{
-                                    width: 10,
-                                    height: 10,
-                                    backgroundColor: COLORS[idx % COLORS.length],
-                                    display: 'inline-block',
-                                    marginRight: 6,
-                                  }}
-                                />
-                                <span>{entry.name}</span>
-                              </li>
+                            {categorySpendingData.map((entry, index) => (
+                              <Cell
+                                key={`cell-${index}`}
+                                fill={COLORS[index % COLORS.length]}
+                                stroke={COLORS[index % COLORS.length]}
+                                strokeWidth={1}
+                                style={{ outline: "none" }}
+                              />
                             ))}
-                          </ul>
-                        </div>
-                      </PieChart>
-                    </ResponsiveContainer>
+                          </Pie>
+                          <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(200, 200, 200, 0.1)" }} />
+                          {/* Hide the Recharts legend on mobile to avoid layout issues */}
+                          <Legend
+                            layout="horizontal"
+                            verticalAlign="bottom"
+                            align="center"
+                            wrapperStyle={{
+                              paddingTop: 20,
+                              fontSize: 14,
+                              overflowX: 'auto',
+                              width: '100%',
+                              display: window.innerWidth < 640 ? 'none' : 'block'
+                            }}
+                            iconSize={10}
+                            iconType="circle"
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+
+                    {/* Custom scrollable legend for small screens - two rows if needed */}
+                    <div className="w-full mt-2 md:hidden overflow-x-auto scrollbar-thin">
+                      <div className="grid grid-cols-2 gap-2 px-2 pb-2 min-w-max sm:flex sm:flex-row sm:space-x-4">
+                        {categorySpendingData.map((entry, idx) => (
+                          <div key={`legend-${idx}`} className="flex items-center whitespace-nowrap">
+                            <div
+                              className="w-3 h-3 rounded-full mr-2 flex-shrink-0"
+                              style={{ backgroundColor: COLORS[idx % COLORS.length] }}
+                            />
+                            <span className="text-xs">
+                              {entry.name} (₹{entry.value.toLocaleString()})
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Show category values in a separate scrollable area for mobile */}
+                    <div className="w-full mt-1 md:hidden overflow-x-auto scrollbar-thin">
+                      <div className="flex flex-row space-x-4 min-w-max px-2 pb-2">
+                        {categorySpendingData.slice(0, 3).map((entry, idx) => (
+                          <div key={`value-${idx}`} className="text-xs text-center">
+                            <span className="font-medium" style={{ color: COLORS[idx % COLORS.length] }}>
+                              • {entry.name}: ₹{entry.value.toLocaleString()}
+                            </span>
+                          </div>
+                        ))}
+                        {categorySpendingData.length > 3 && (
+                          <div className="text-xs text-center">
+                            <span className="font-medium">• + {categorySpendingData.length - 3} more</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 ) : (
                   <div className="flex flex-col items-center justify-center h-[220px] w-full text-center text-muted-foreground">
@@ -725,6 +742,8 @@ export function AnalyticsPage() {
               </div>
             </CardContent>
           </Card>
+          
+          {/* Type Spending Pie Chart Card */}
           <Card className="dark:bg-card overflow-hidden">
             <CardHeader className="border-b">
               <CardTitle className="flex items-center">
@@ -747,7 +766,7 @@ export function AnalyticsPage() {
                     </div>
                   </div>
                 ) : typeSpendingData.length > 0 ? (
-                  <div className="w-full flex justify-center">
+                  <div className="w-full flex flex-col items-center">
                     <ResponsiveContainer
                       width="100%"
                       height={window.innerWidth < 640 ? 220 : 300}
@@ -780,8 +799,38 @@ export function AnalyticsPage() {
                           ))}
                         </Pie>
                         <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(200, 200, 200, 0.1)" }} />
+                        <Legend
+                          layout="horizontal"
+                          verticalAlign="bottom"
+                          align="center"
+                          wrapperStyle={{
+                            paddingTop: 20,
+                            fontSize: window.innerWidth < 640 ? 12 : 14,
+                            overflowX: 'auto',
+                            width: '100%'
+                          }}
+                          iconSize={10}
+                          iconType="circle"
+                        />
                       </PieChart>
                     </ResponsiveContainer>
+
+                    {/* Custom scrollable legend for small screens */}
+                    <div className="w-full mt-4 md:hidden overflow-x-auto scrollbar-thin">
+                      <div className="flex flex-row space-x-4 min-w-max px-2 pb-2">
+                        {typeSpendingData.map((entry, idx) => (
+                          <div key={`legend-${idx}`} className="flex items-center">
+                            <div
+                              className="w-3 h-3 rounded-full mr-2"
+                              style={{ backgroundColor: COLORS[idx % COLORS.length] }}
+                            />
+                            <span className="text-xs whitespace-nowrap">
+                              {entry.name} (₹{entry.value.toLocaleString()})
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 ) : (
                   <div className="flex flex-col items-center justify-center h-[220px] w-full text-center text-muted-foreground">
