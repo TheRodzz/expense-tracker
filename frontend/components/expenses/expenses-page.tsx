@@ -427,6 +427,7 @@ export function ExpensesPage() {
             paymentMethods={paymentMethods}
             onEdit={handleEditExpense}
             onRefresh={() => {
+              
               fetchExpensesPage(currentPage)
               fetchTotalExpenseCount() // Also refresh total count on manual refresh
             }}

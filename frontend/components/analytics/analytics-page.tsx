@@ -430,7 +430,7 @@ export function AnalyticsPage() {
 
     const dailySpendingMap = new Map<string, number>()
     // Define which types count as spending for this chart (consistent with pie chart)
-    const spendingTypes: Array<Expense["type"]> = ["Need", "Want"] // Example: Only 'Need' and 'Want'
+    const spendingTypes: Array<Expense["type"]> = ["Need", "Want", "Investment"] // Example: Only 'Need' and 'Want'
 
     // Aggregate spending by date (using the timestamp's date part)
     allExpenses.forEach((expense) => {
