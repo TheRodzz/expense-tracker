@@ -67,9 +67,8 @@ All database schema, relationships, and RLS (Row Level Security) are managed as 
 
 ### Backend (`backend/.env.local`)
 ```
-SUPABASE_URL=your-supabase-url
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
-SUPABASE_ANON_KEY=your-anon-key
+NEXT_PUBLIC_SUPABASE_URL=your-supabase-url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 JWT_SECRET=your-jwt-secret
 ```
 

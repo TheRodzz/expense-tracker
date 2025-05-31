@@ -50,7 +50,10 @@ export function Dashboard() {
       // Calculate totals for current month
       const now = new Date()
       const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
-      const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString()
+      // Set endOfMonth to the end of the last day in local time, then convert to UTC
+      const endOfMonthDate = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+      endOfMonthDate.setHours(23, 59, 59, 999)
+      const endOfMonth = endOfMonthDate.toISOString()
 
       const monthlyExpenses = await getExpenses({
         startDate: startOfMonth,
